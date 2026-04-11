@@ -1,0 +1,7 @@
+{
+  "kioskId": "KIOSK-001",
+  "kioskType": "PharmacyKiosk",
+  "emergencyMode": false,
+  "maxPurchasePerUser": 5,
+  "activePaymentProvider": "CreditCard"
+}

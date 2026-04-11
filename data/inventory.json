@@ -1,0 +1,26 @@
+[
+  {
+    "id": "MED-001",
+    "name": "Paracetamol 500mg",
+    "price": 25.0,
+    "stock": 100,
+    "reserved": 0,
+    "hardwareAvailable": true,
+    "isBundle": false
+  },
+  {
+    "id": "MED-002",
+    "name": "Bandage",
+    "price": 15.0,
+    "stock": 50,
+    "reserved": 0,
+    "hardwareAvailable": true,
+    "isBundle": false
+  },
+  {
+    "id": "BUNDLE-001",
+    "name": "Emergency Kit",
+    "isBundle": true,
+    "children": ["MED-001", "MED-002"]
+  }
+]
