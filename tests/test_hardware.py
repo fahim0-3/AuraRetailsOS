@@ -3,6 +3,7 @@
 # ============================================================
 
 import unittest
+from core.central_registry import CentralRegistry
 from hardware.spiral_dispenser import SpiralDispenserImpl
 from hardware.conveyor_dispenser import ConveyorDispenserImpl
 from hardware.robotic_arm_dispenser import RoboticArmDispenserImpl
@@ -15,6 +16,9 @@ from hardware.i_kiosk_module import IKioskModule
 
 
 class TestHardware(unittest.TestCase):
+    def setUp(self):
+        CentralRegistry._instance = None
+
     def test_dispenser_implementations(self):
         spiral = SpiralDispenserImpl()
         conveyor = ConveyorDispenserImpl()
@@ -86,8 +90,18 @@ class TestHardware(unittest.TestCase):
         self.assertTrue(network_solar_refrigerated.is_operational())
 
         # If we make base non-operational, chain should reflect that
-        # Note: BaseKiosk.is_operational() always returns True in current implementation
-        # This test validates the delegation pattern works
+        CentralRegistry.get_instance().set_status("kioskMode", "maintenance")
+        self.assertFalse(base.is_operational())
+        self.assertFalse(refrigerated.is_operational())
+        self.assertFalse(solar_refrigerated.is_operational())
+        self.assertFalse(network_solar_refrigerated.is_operational())
+
+    def test_network_module_reflects_registry_status(self):
+        network = NetworkModule(BaseKiosk())
+        self.assertTrue(network.is_operational())
+
+        CentralRegistry.get_instance().set_status("networkOnline", False)
+        self.assertFalse(network.is_operational())
 
 
 if __name__ == '__main__':

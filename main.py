@@ -83,7 +83,13 @@ def scenario_2() -> None:
     print(f"  Purchase result: {'SUCCESS' if result else 'FAILED'}")
 
     print("\nStep 7: RefundTransaction on last purchase")
-    kiosk.refund_transaction("TX-REFUND-001", 80.0)
+    history = kiosk.get_transaction_history()
+    refund_amount = 80.0
+    for entry in reversed(history):
+        if entry["type"] == "PURCHASE" and entry["status"] == "SUCCESS":
+            refund_amount = float(entry["amount"])
+            break
+    kiosk.refund_transaction("TX-REFUND-001", refund_amount)
     print("  Refund issued")
 
     print("\nStep 8: Print transaction history (shows all transactions)")

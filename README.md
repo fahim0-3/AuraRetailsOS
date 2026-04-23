@@ -21,18 +21,19 @@
 12. [Folder Structure](#folder-structure)
 13. [Setup & Run Instructions](#setup--run-instructions)
 14. [Demo / Simulation Scenarios](#demo--simulation-scenarios)
-15. [Persistence](#persistence)
-16. [Testing](#testing)
-17. [Known Limitations](#known-limitations)
-18. [Future Enhancements](#future-enhancements)
+15. [Desktop GUI (PySide6)](#desktop-gui-pyside6)
+16. [Persistence](#persistence)
+17. [Testing](#testing)
+18. [Known Limitations](#known-limitations)
+19. [Future Enhancements](#future-enhancements)
 
 ---
 
 ## Project Overview
 
-**Aura Retail OS** is a console-based simulation of a next-generation retail kiosk operating
-system. The project models a complete kiosk lifecycle—hardware configuration, inventory
-management, payment processing, and transactional operations—entirely through
+**Aura Retail OS** is a retail kiosk simulation with both console scenarios and a PySide6
+desktop GUI. The project models a complete kiosk lifecycle—hardware configuration,
+inventory management, payment processing, and transactional operations—entirely through
 object-oriented design patterns.
 
 The system supports multiple kiosk variants (Pharmacy, Food, Emergency Relief), each
@@ -110,6 +111,12 @@ Path B focuses on building a **Modular Hardware Platform** with the following go
 | JSON persistence (config) | ✓ | `CentralRegistry.load_config()` / `save_config()` |
 | System-wide event logging | ✓ | `CentralRegistry.log_event()` |
 | Kiosk diagnostics | ✓ | `KioskInterface.run_diagnostics()` |
+| Pricing policy subsystem | ✓ | `IPricingPolicy`, `StandardPricingPolicy`, `DiscountPricingPolicy`, `EmergencyPricingPolicy` |
+| Emergency-mode purchase constraints | ✓ | `KioskVerificationModule`, `maxPurchasePerUser` + essential-item checks |
+| Operational purchase gating (hardware/mode/network) | ✓ | `BaseKiosk.is_operational()`, `NetworkModule.is_operational()`, `KioskInterface.purchase_item()` verification context |
+| Hardware dependency mapping | ✓ | `Product.required_modules`, runtime module verification before purchase |
+| Factory pricing/verification modules | ✓ | `AbstractKioskFactory.create_pricing_policy()` / `create_verification_module()` |
+| Desktop GUI (PySide6) | ✓ | `gui/`, `KioskController`, `run_gui.py` |
 | Unit test suite | ✓ | `tests/` (hardware, inventory, payment, transactions) |
 
 ---
@@ -529,12 +536,25 @@ access is needed.
 AuraRetailOS/
 │
 ├── main.py                          # Entry point — runs 3 simulation scenarios
+├── run_gui.py                       # PySide6 entry point
 │
 ├── core/                            # Core system infrastructure
 │   ├── __init__.py
 │   ├── central_registry.py          # Singleton — event log, status map, config I/O
 │   ├── abstract_kiosk_factory.py    # Abstract Factory interface
 │   └── kiosk_interface.py           # Facade — unified kiosk API
+│
+├── gui/                             # PySide6 desktop frontend
+│   ├── __init__.py
+│   ├── app.py                       # QApplication bootstrap + styling
+│   ├── kiosk_controller.py          # QObject bridge to KioskInterface facade
+│   ├── main_window.py               # Main window + tab container
+│   └── tabs/
+│       ├── __init__.py
+│       ├── hardware_tab.py          # Scenario 1 controls (modules/dispenser/diagnostics)
+│       ├── inventory_tab.py         # Inventory tree + JSON load/save + add product/bundle
+│       ├── transactions_tab.py      # Purchase/refund/payment swap controls
+│       └── history_tab.py           # Command history table + CentralRegistry event log
 │
 ├── factories/                       # Concrete Abstract Factory implementations
 │   ├── __init__.py
@@ -597,7 +617,7 @@ AuraRetailOS/
 └── test_errors.txt                  # Captured test error output
 ```
 
-**Total:** 37 source files across 7 packages, plus 3 JSON data files.
+**Total:** 45+ source files across 8 packages, plus 3 JSON data files.
 
 ---
 
@@ -607,19 +627,21 @@ AuraRetailOS/
 
 - **Python 3.10+** (uses `match` statement–free code, `from __future__ import annotations`,
   type hints with `X | Y` union syntax)
-- No external dependencies — the project uses only the Python standard library
-  (`abc`, `json`, `uuid`, `datetime`, `unittest`, `unittest.mock`)
+- **PySide6** for the desktop GUI (`pip install PySide6`)
+- Core simulation logic uses only standard library modules (`abc`, `json`, `uuid`,
+  `datetime`, `unittest`, `unittest.mock`)
 
 ### Installation
 
 ```bash
 # Clone or download the project
 cd AuraRetailOS
+
+# Install GUI dependency
+pip install PySide6
 ```
 
-No `pip install` is required — zero external dependencies.
-
-### Running the Simulation
+### Running the Console Simulation
 
 ```bash
 python main.py
@@ -627,6 +649,20 @@ python main.py
 
 This executes all three simulation scenarios sequentially and prints detailed console
 output for each step.
+
+### Running the GUI
+
+```bash
+python run_gui.py
+```
+
+Optional startup flags:
+
+```bash
+python run_gui.py --kiosk-type pharmacy --kiosk-id KIOSK-001
+python run_gui.py --kiosk-type food --kiosk-id KIOSK-002
+python run_gui.py --kiosk-type emergency --kiosk-id KIOSK-003
+```
 
 ### Running the Tests
 
@@ -686,6 +722,27 @@ python -m unittest tests.test_transactions -v
 9. Attempt to purchase `EmergencyKit` → **fails** (Bandage unavailable propagates up through bundle)
 10. Demonstrate unauthorized `user`-role proxy blocked from `update_stock()`
 11. Restore hardware → purchase succeeds again
+
+---
+
+## Desktop GUI (PySide6)
+
+The GUI wraps existing domain logic through `KioskInterface` via `gui/kiosk_controller.py`.
+No design-pattern implementation is rewritten; the tabs orchestrate the same flows as
+the console scenarios:
+
+| Tab | What it does | Patterns highlighted |
+|---|---|---|
+| Kiosk / Hardware | Create kiosk variants, run diagnostics, attach modules, hot-swap dispenser hardware | Abstract Factory, Bridge, Decorator, Facade |
+| Inventory | Visualize product/bundle tree, load/save `data/inventory.json`, add products and bundles | Composite, Proxy, Facade |
+| Transactions / Payments | Purchase and refund forms, runtime payment adapter swap (UPI/Credit Card/Digital Wallet) | Adapter, Command, Facade |
+| History / Logs | Structured command history and singleton event log stream | Command, Singleton |
+
+Run with:
+
+```bash
+python run_gui.py
+```
 
 ---
 
@@ -771,13 +828,11 @@ test modules:
 3. **Simulated hardware** — All dispenser implementations return `True` unconditionally;
    no real hardware failure simulation beyond the `hardware_available` flag on `Product`.
 4. **Simulated payments** — Legacy payment stubs always succeed; no real error paths.
-5. **No quantity validation** — Individual purchases do not enforce per-user purchase limits
-   despite `maxPurchasePerUser` being present in `config.json`.
-6. **Bundle purchasing** — When purchasing a bundle, stock is deducted from leaf products
+5. **Bundle purchasing** — When purchasing a bundle, stock is deducted from leaf products
    recursively, but the bundle itself does not track a separate stock quantity.
-7. **Transaction ID generation** — Uses truncated UUIDs (`uuid4()[:8]`), which have a
+6. **Transaction ID generation** — Uses truncated UUIDs (`uuid4()[:8]`), which have a
    non-zero (though negligible) collision probability.
-8. **Proxy bypass** — `KioskInterface.add_product()` intentionally bypasses the proxy
+7. **Proxy bypass** — `KioskInterface.add_product()` intentionally bypasses the proxy
    (`self._inventory.real.add_item(item)`) for setup convenience.
 
 ---
@@ -786,16 +841,12 @@ test modules:
 
 - **Database persistence** — Replace JSON files with SQLite or PostgreSQL for robust
   transactional storage.
-- **GUI / Web interface** — Add a graphical frontend (e.g., PyQt, Flask, or FastAPI) for
-  interactive kiosk operation.
+- **Web interface** — Add a browser-based frontend (Flask/FastAPI) alongside the existing
+  PySide6 desktop app.
 - **Observer pattern** — Implement real-time event notifications (low stock alerts,
   hardware fault broadcasts) via an Observer/EventBus.
-- **Strategy pattern** — Introduce pluggable pricing strategies (discounts, surge pricing,
-  loyalty rewards).
 - **Concurrent access** — Add thread-safe locking to `CentralRegistry`, `InventoryManager`,
   and `CommandInvoker` for multi-threaded or async operation.
-- **Per-user purchase limits** — Enforce the `maxPurchasePerUser` configuration value in
-  `PurchaseItemCommand`.
 - **Logging framework** — Replace `print()` statements with Python's `logging` module for
   configurable log levels and file output.
 - **CI/CD pipeline** — Add GitHub Actions or similar for automated test execution on every

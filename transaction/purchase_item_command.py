@@ -5,15 +5,18 @@
 from __future__ import annotations
 from datetime import datetime, timezone
 import uuid
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from transaction.i_command import ICommand
 from core.central_registry import CentralRegistry
 
 if TYPE_CHECKING:
     from inventory.i_inventory_manager import IInventoryManager
+    from inventory.i_inventory_item import IInventoryItem
     from payment.i_payment_processor import IPaymentProcessor
     from hardware.dispenser_controller import DispenserController
+    from pricing.i_pricing_policy import IPricingPolicy
+    from verification.i_verification_module import IVerificationModule
 
 
 # PATTERN: Command (Concrete Command)
@@ -26,6 +29,10 @@ class PurchaseItemCommand(ICommand):
         product_id: str,
         user_id: str,
         quantity: int,
+        pricing_policy: IPricingPolicy | None = None,
+        verification_module: IVerificationModule | None = None,
+        pricing_context: dict[str, Any] | None = None,
+        verification_context: dict[str, Any] | None = None,
     ) -> None:
         self._inventory = inventory
         self._payment = payment
@@ -33,6 +40,10 @@ class PurchaseItemCommand(ICommand):
         self._product_id = product_id
         self._user_id = user_id
         self._quantity = quantity
+        self._pricing_policy = pricing_policy
+        self._verification_module = verification_module
+        self._pricing_context = pricing_context or {}
+        self._verification_context = verification_context or {}
         self._amount = 0.0
         self._transaction_id = ""
         self._status = "PENDING"
@@ -59,7 +70,21 @@ class PurchaseItemCommand(ICommand):
             )
             return False
 
-        self._amount = item.price * self._quantity
+        if self._verification_module:
+            verified, reason = self._verification_module.verify_purchase(
+                item,
+                self._user_id,
+                self._quantity,
+                self._verification_context,
+            )
+            if not verified:
+                self._status = "FAILED"
+                CentralRegistry.get_instance().log_event(
+                    f"PURCHASE FAILED: {self._product_id} — {reason}"
+                )
+                return False
+
+        self._amount = self._compute_final_price(item)
 
         # Step 2: reserve stock (tentative)
         if not self._inventory.update_stock(self._product_id, -self._quantity):
@@ -95,6 +120,14 @@ class PurchaseItemCommand(ICommand):
             f"PURCHASE SUCCESS: {self._product_id} x{self._quantity} @ ${self._amount:.2f} [TXN: {self._transaction_id}]"
         )
         return True
+
+    def _compute_final_price(self, item: IInventoryItem) -> float:
+        if self._pricing_policy is None:
+            return round(item.price * self._quantity, 2)
+        return round(
+            self._pricing_policy.compute_price(item, self._quantity, self._pricing_context),
+            2,
+        )
 
     def undo(self) -> bool:
         if self._status != "SUCCESS":

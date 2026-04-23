@@ -14,7 +14,12 @@ from inventory.inventory_manager import InventoryManager
 from inventory.inventory_proxy import InventoryProxy
 from payment.credit_card_adapter import CreditCardAdapter
 from hardware.dispenser_controller import DispenserController
+from hardware.network_module import NetworkModule
 from hardware.spiral_dispenser import SpiralDispenserImpl
+from pricing.pricing_policies import DiscountPricingPolicy
+from verification.kiosk_verification_module import KioskVerificationModule
+from core.kiosk_interface import KioskInterface
+from factories.food_kiosk_factory import FoodKioskFactory
 
 
 class TestTransactions(unittest.TestCase):
@@ -168,6 +173,124 @@ class TestTransactions(unittest.TestCase):
         self.assertEqual(len(self.invoker._history), 2)
         self.assertEqual(self.invoker._history[0].status, "SUCCESS")
         self.assertEqual(self.invoker._history[1].status, "SUCCESS")
+
+    def test_purchase_uses_discount_pricing_policy(self):
+        cmd = PurchaseItemCommand(
+            self.inventory,
+            self.payment,
+            self.dispenser,
+            "TEST001",
+            "USER001",
+            2,
+            pricing_policy=DiscountPricingPolicy(0.20),
+        )
+        result = self.invoker.execute_command(cmd)
+        self.assertTrue(result)
+        self.assertEqual(cmd.status, "SUCCESS")
+        self.assertEqual(cmd._amount, 40.0)  # 25 * 2 with 20% discount
+
+    def test_purchase_blocks_emergency_limit_for_essential_item(self):
+        essential = Product(
+            "ESS001",
+            "Essential Product",
+            12.0,
+            total_stock=20,
+            essential_item=True,
+        )
+        self.inventory.add_item(essential)
+        verifier = KioskVerificationModule()
+
+        cmd = PurchaseItemCommand(
+            self.inventory,
+            self.payment,
+            self.dispenser,
+            "ESS001",
+            "USER001",
+            3,
+            verification_module=verifier,
+            verification_context={
+                "available_modules": {"base"},
+                "emergency_mode": True,
+                "max_purchase_per_user": 2,
+            },
+        )
+        result = self.invoker.execute_command(cmd)
+        self.assertFalse(result)
+        self.assertEqual(cmd.status, "FAILED")
+        self.assertEqual(essential.get_available_stock(), 20)
+
+    def test_purchase_blocks_missing_required_hardware_module(self):
+        cold_chain = Product(
+            "COLD001",
+            "Cold Chain Product",
+            40.0,
+            total_stock=5,
+            required_modules=["refrigeration"],
+        )
+        self.inventory.add_item(cold_chain)
+        verifier = KioskVerificationModule()
+
+        cmd_fail = PurchaseItemCommand(
+            self.inventory,
+            self.payment,
+            self.dispenser,
+            "COLD001",
+            "USER001",
+            1,
+            verification_module=verifier,
+            verification_context={
+                "available_modules": {"base"},
+                "emergency_mode": False,
+                "max_purchase_per_user": 5,
+            },
+        )
+        result_fail = self.invoker.execute_command(cmd_fail)
+        self.assertFalse(result_fail)
+
+        cmd_success = PurchaseItemCommand(
+            self.inventory,
+            self.payment,
+            self.dispenser,
+            "COLD001",
+            "USER001",
+            1,
+            verification_module=verifier,
+            verification_context={
+                "available_modules": {"base", "refrigeration"},
+                "emergency_mode": False,
+                "max_purchase_per_user": 5,
+            },
+        )
+        result_success = self.invoker.execute_command(cmd_success)
+        self.assertTrue(result_success)
+        self.assertEqual(cmd_success.status, "SUCCESS")
+
+    def test_purchase_blocks_when_kiosk_in_maintenance_mode(self):
+        CentralRegistry.get_instance().set_status("kioskMode", "maintenance")
+        kiosk = KioskInterface(FoodKioskFactory(), "KIOSK-TEST")
+        kiosk.add_product(Product("FOOD001", "Snack", 10.0, total_stock=3))
+
+        result = kiosk.purchase_item("FOOD001", "USER001", 1)
+
+        self.assertFalse(result)
+        self.assertEqual(kiosk.inventory.get_item("FOOD001").get_available_stock(), 3)
+        self.assertTrue(
+            any("maintenance mode" in event for event in CentralRegistry.get_instance().get_event_log())
+        )
+
+    def test_purchase_blocks_when_network_module_is_offline(self):
+        CentralRegistry.get_instance().set_status("networkOnline", False)
+        kiosk = KioskInterface(FoodKioskFactory(), "KIOSK-TEST")
+        kiosk.attach_module(NetworkModule(kiosk._module_chain))
+        kiosk.add_product(Product("FOOD002", "Wrap", 15.0, total_stock=4))
+
+        result = kiosk.purchase_item("FOOD002", "USER001", 1)
+
+        self.assertFalse(result)
+        self.assertEqual(kiosk.inventory.get_item("FOOD002").get_available_stock(), 4)
+        self.assertTrue(
+            any("network is offline" in event for event in CentralRegistry.get_instance().get_event_log())
+        )
 
 
 if __name__ == '__main__':

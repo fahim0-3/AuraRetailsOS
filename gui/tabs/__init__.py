@@ -1,0 +1,2 @@
+"""GUI tabs for AuraRetailsOS."""
+

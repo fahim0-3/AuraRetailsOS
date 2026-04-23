@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 import json
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, Any
 
 from inventory.i_inventory_manager import IInventoryManager
 
@@ -95,6 +95,54 @@ class InventoryManager(IInventoryManager):
         for item in self._items.values():
             item.display(0)
 
+    def get_items_snapshot(self) -> list[dict[str, Any]]:
+        child_ids = {
+            child.item_id
+            for item in self._items.values()
+            if item.is_bundle()
+            for child in item._children  # type: ignore[attr-defined]
+        }
+
+        roots = [
+            item for item in self._items.values()
+            if item.item_id not in child_ids
+        ]
+
+        def serialize(item: IInventoryItem) -> dict[str, Any]:
+            if item.is_bundle():
+                bundle = item  # type: ProductBundle
+                available = bundle.get_available_stock()
+                return {
+                    "id": bundle.item_id,
+                    "name": bundle.name,
+                    "price": bundle.price,
+                    "total_stock": available,
+                    "reserved_stock": 0,
+                    "available_stock": available,
+                    "hardware_available": bundle.is_available(),
+                    "required_modules": [],
+                    "essential_item": False,
+                    "is_bundle": True,
+                    "children": [serialize(child) for child in bundle._children],
+                }
+
+            product = item  # type: Product
+            return {
+                "id": product.item_id,
+                "name": product.name,
+                "price": product.price,
+                "total_stock": product._total_stock,
+                "reserved_stock": product._reserved_stock,
+                "available_stock": product.get_available_stock(),
+                "hardware_available": product._hardware_available,
+                "required_modules": list(product.required_modules),
+                "essential_item": product.is_essential_item,
+                "is_bundle": False,
+                "children": [],
+            }
+
+        return [serialize(item) for item in roots]
+
     def load_from_file(self, filepath: str) -> None:
         with open(filepath, 'r') as f:
             data = json.load(f)
@@ -115,6 +163,8 @@ class InventoryManager(IInventoryManager):
                     total_stock=entry.get("stock", 0),
                     reserved_stock=entry.get("reserved", 0),
                     hardware_available=entry.get("hardwareAvailable", True),
+                    required_modules=entry.get("requiredModules", []),
+                    essential_item=entry.get("essentialItem", False),
                 )
                 self._items[product.item_id] = product
 
@@ -137,6 +187,8 @@ class InventoryManager(IInventoryManager):
                     "stock": product._total_stock,
                     "reserved": product._reserved_stock,
                     "hardwareAvailable": product._hardware_available,
+                    "requiredModules": list(product.required_modules),
+                    "essentialItem": product.is_essential_item,
                     "isBundle": False,
                 })
         with open(filepath, 'w') as f:

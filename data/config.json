@@ -3,5 +3,6 @@
   "kioskType": "PharmacyKiosk",
   "emergencyMode": false,
   "maxPurchasePerUser": 5,
+  "pricingMode": "standard",
   "activePaymentProvider": "CreditCard"
 }

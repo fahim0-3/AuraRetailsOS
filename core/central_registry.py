@@ -5,7 +5,7 @@
 from __future__ import annotations
 import json
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Optional
 
 
 # PATTERN: Singleton
@@ -28,10 +28,10 @@ class CentralRegistry:
         entry = f"[{timestamp}] {event}"
         self._event_log.append(entry)
 
-    def get_status(self, key: str) -> Optional[str]:
+    def get_status(self, key: str) -> Optional[Any]:
         return self._status_map.get(key)
 
-    def set_status(self, key: str, value: str) -> None:
+    def set_status(self, key: str, value: Any) -> None:
         self._status_map[key] = value
 
     def get_event_log(self) -> list[str]:
@@ -42,7 +42,7 @@ class CentralRegistry:
             with open(filepath, 'r') as f:
                 data = json.load(f)
             for key, value in data.items():
-                self.set_status(key, str(value))
+                self.set_status(key, value)
             return data
         except FileNotFoundError:
             return {}

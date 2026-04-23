@@ -9,6 +9,8 @@ from hardware.i_kiosk_module import IKioskModule
 
 # PATTERN: Decorator (Concrete)
 class SolarMonitorModule(KioskModuleDecorator):
+    MODULE_KEY = "solar_monitor"
+
     def get_module_info(self) -> str:
         return f"{self._wrapped.get_module_info()} + [Solar] output: 220W"
 

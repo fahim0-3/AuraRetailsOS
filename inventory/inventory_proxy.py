@@ -3,7 +3,7 @@
 # ============================================================
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Any
 
 from core.central_registry import CentralRegistry
 from inventory.i_inventory_manager import IInventoryManager
@@ -63,6 +63,9 @@ class InventoryProxy(IInventoryManager):
     def finalize_purchase(self, item_id: str, qty: int) -> bool:
         # Finalizing purchase is allowed as part of the transaction flow
         return self._real.finalize_purchase(item_id, qty)
+
+    def get_items_snapshot(self) -> list[dict[str, Any]]:
+        return self._real.get_items_snapshot()
 
     # Expose the real manager for direct access
     @property

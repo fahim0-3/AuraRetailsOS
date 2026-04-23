@@ -6,6 +6,10 @@
     "stock": 100,
     "reserved": 0,
     "hardwareAvailable": true,
+    "requiredModules": [
+      "refrigeration"
+    ],
+    "essentialItem": true,
     "isBundle": false
   },
   {
@@ -15,6 +19,8 @@
     "stock": 50,
     "reserved": 0,
     "hardwareAvailable": true,
+    "requiredModules": [],
+    "essentialItem": true,
     "isBundle": false
   },
   {

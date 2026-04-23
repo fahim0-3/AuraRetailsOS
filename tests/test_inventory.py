@@ -36,6 +36,8 @@ class TestInventory(unittest.TestCase):
         self.assertEqual(self.product1.get_available_stock(), 100)
         self.assertTrue(self.product1.is_available())
         self.assertFalse(self.product1.is_bundle())
+        self.assertEqual(self.product1.required_modules, ())
+        self.assertFalse(self.product1.is_essential_item)
 
     def test_bundle_creation(self):
         self.assertEqual(self.bundle.item_id, "B001")
@@ -107,6 +109,18 @@ class TestInventory(unittest.TestCase):
         # But user should be able to make reservations (negative delta)
         result = proxy_user.update_stock("P001", -5)  # Reserve
         self.assertTrue(result)  # Reservations allowed for all roles
+
+    def test_product_hardware_dependency_metadata(self):
+        cold_chain = Product(
+            "P010",
+            "Cold Item",
+            30.0,
+            total_stock=10,
+            required_modules=["refrigeration", "network"],
+            essential_item=True,
+        )
+        self.assertEqual(cold_chain.required_modules, ("network", "refrigeration"))
+        self.assertTrue(cold_chain.is_essential_item)
 
 
 if __name__ == '__main__':
