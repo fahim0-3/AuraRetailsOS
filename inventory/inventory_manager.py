@@ -7,11 +7,11 @@ import json
 from typing import Optional, TYPE_CHECKING, Any
 
 from inventory.i_inventory_manager import IInventoryManager
+from inventory.product import Product
+from inventory.product_bundle import ProductBundle
 
 if TYPE_CHECKING:
     from inventory.i_inventory_item import IInventoryItem
-    from inventory.product import Product
-    from inventory.product_bundle import ProductBundle
 
 
 class InventoryManager(IInventoryManager):
@@ -60,7 +60,7 @@ class InventoryManager(IInventoryManager):
         item = self._items.get(item_id)
         if not item or item.is_bundle():
             return False
-        
+
         product = item  # type: Product
         product.restock(qty)
         return True
@@ -70,7 +70,7 @@ class InventoryManager(IInventoryManager):
         item = self._items.get(item_id)
         if not item or item.is_bundle():
             return False
-        
+
         product = item  # type: Product
         product.deduct(qty)
         return True
@@ -112,6 +112,7 @@ class InventoryManager(IInventoryManager):
             if item.is_bundle():
                 bundle = item  # type: ProductBundle
                 available = bundle.get_available_stock()
+                compatible_kiosks = list(bundle.compatible_kiosks)
                 return {
                     "id": bundle.item_id,
                     "name": bundle.name,
@@ -123,10 +124,13 @@ class InventoryManager(IInventoryManager):
                     "required_modules": [],
                     "essential_item": False,
                     "is_bundle": True,
+                    "compatible_kiosks": compatible_kiosks,
+                    "compatibleKiosks": compatible_kiosks,
                     "children": [serialize(child) for child in bundle._children],
                 }
 
             product = item  # type: Product
+            compatible_kiosks = list(product.compatible_kiosks)
             return {
                 "id": product.item_id,
                 "name": product.name,
@@ -138,6 +142,8 @@ class InventoryManager(IInventoryManager):
                 "required_modules": list(product.required_modules),
                 "essential_item": product.is_essential_item,
                 "is_bundle": False,
+                "compatible_kiosks": compatible_kiosks,
+                "compatibleKiosks": compatible_kiosks,
                 "children": [],
             }
 
@@ -149,7 +155,11 @@ class InventoryManager(IInventoryManager):
 
         for entry in data:
             if entry.get("isBundle", False):
-                bundle = ProductBundle(entry["id"], entry["name"])
+                bundle = ProductBundle(
+                    entry["id"],
+                    entry["name"],
+                    compatible_kiosks=entry.get("compatibleKiosks", entry.get("compatible_kiosks", []))
+                )
                 for child_id in entry.get("children", []):
                     child = self._items.get(child_id)
                     if child:
@@ -165,6 +175,7 @@ class InventoryManager(IInventoryManager):
                     hardware_available=entry.get("hardwareAvailable", True),
                     required_modules=entry.get("requiredModules", []),
                     essential_item=entry.get("essentialItem", False),
+                    compatible_kiosks=entry.get("compatibleKiosks", entry.get("compatible_kiosks", [])),
                 )
                 self._items[product.item_id] = product
 
@@ -177,6 +188,7 @@ class InventoryManager(IInventoryManager):
                     "name": item.name,
                     "isBundle": True,
                     "children": [c.item_id for c in item._children],  # type: ignore
+                    "compatibleKiosks": list(item.compatible_kiosks),
                 })
             else:
                 product = item  # type: Product
@@ -190,6 +202,7 @@ class InventoryManager(IInventoryManager):
                     "requiredModules": list(product.required_modules),
                     "essentialItem": product.is_essential_item,
                     "isBundle": False,
+                    "compatibleKiosks": list(product.compatible_kiosks),
                 })
         with open(filepath, 'w') as f:
             json.dump(entries, f, indent=2)

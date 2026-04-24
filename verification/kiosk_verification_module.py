@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from verification.i_verification_module import IVerificationModule
+from inventory.kiosk_compatibility import module_matches, normalize_kiosk_tag
 
 if TYPE_CHECKING:
     from inventory.i_inventory_item import IInventoryItem
@@ -51,6 +52,12 @@ class KioskVerificationModule(IVerificationModule):
         if not _to_bool(ctx.get("kiosk_operational", True)):
             return False, "kiosk is not operational"
 
+        # Check kiosk compatibility
+        kiosk_type = normalize_kiosk_tag(str(ctx.get("kiosk_type", "")))
+        if kiosk_type and hasattr(item, 'is_compatible_with_kiosk'):
+            if not item.is_compatible_with_kiosk(kiosk_type):
+                return False, f"product '{getattr(item, 'name', item.item_id)}' is not available for this kiosk type"
+
         available_modules = {
             str(module_key).strip().lower()
             for module_key in ctx.get("available_modules", set())
@@ -82,12 +89,7 @@ class KioskVerificationModule(IVerificationModule):
                 missing.update(self._collect_missing_modules(child, available_modules))
             return missing
 
-        required_modules = {
-            str(module).strip().lower()
-            for module in getattr(item, "required_modules", [])
-            if str(module).strip()
-        }
-        return required_modules - available_modules
+        return module_matches(getattr(item, "required_modules", []), available_modules)
 
     def _contains_essential_item(self, item: IInventoryItem) -> bool:
         if item.is_bundle():

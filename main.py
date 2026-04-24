@@ -63,7 +63,7 @@ def scenario_2() -> None:
     kiosk = KioskInterface(FoodKioskFactory(), "KIOSK-002")
 
     print("\nStep 2: Add product Sandwich (FOOD-001, price=80, stock=10) to inventory")
-    sandwich = Product("FOOD-001", "Sandwich", 80.0, total_stock=10)
+    sandwich = Product("FOOD-001", "Sandwich", 80.0, total_stock=10, compatible_kiosks=["food"])
     kiosk.add_product(sandwich)
     print("  Added: Sandwich (FOOD-001) — stock: 10")
 
@@ -107,9 +107,9 @@ def scenario_3() -> None:
     kiosk = KioskInterface(EmergencyReliefKioskFactory(), "KIOSK-003")
 
     print("\nStep 2: Add products: Bandage(stock=5), Antiseptic(stock=3), Painkiller(stock=10)")
-    bandage = Product("MED-B001", "Bandage", 15.0, total_stock=5)
-    antiseptic = Product("MED-B002", "Antiseptic", 30.0, total_stock=3)
-    painkiller = Product("MED-B003", "Painkiller", 20.0, total_stock=10)
+    bandage = Product("MED-B001", "Bandage", 15.0, total_stock=5, compatible_kiosks=["emergency"])
+    antiseptic = Product("MED-B002", "Antiseptic", 30.0, total_stock=3, compatible_kiosks=["emergency"])
+    painkiller = Product("MED-B003", "Painkiller", 20.0, total_stock=10, compatible_kiosks=["emergency"])
     kiosk.add_product(bandage)
     kiosk.add_product(antiseptic)
     kiosk.add_product(painkiller)

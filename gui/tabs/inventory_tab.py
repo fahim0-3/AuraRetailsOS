@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 
 from gui.kiosk_controller import KioskController
 from inventory.product import Product
+from inventory.kiosk_compatibility import normalize_kiosk_tag
 
 
 class InventoryTab(QWidget):
@@ -38,6 +39,7 @@ class InventoryTab(QWidget):
         self._wire_signals()
         self.refresh_inventory_tree()
         self.refresh_bundle_children_list()
+        self._refresh_permissions()
 
     def _build_ui(self) -> None:
         root = QVBoxLayout(self)
@@ -67,7 +69,7 @@ class InventoryTab(QWidget):
             ]
         )
 
-        product_box = QGroupBox("Add Product")
+        product_box = QGroupBox("Add / Modify Product")
         product_form = QFormLayout(product_box)
         self.product_id_input = QLineEdit()
         self.product_name_input = QLineEdit()
@@ -82,16 +84,28 @@ class InventoryTab(QWidget):
         self.product_required_modules_input.setPlaceholderText(
             "Comma-separated module keys (e.g. refrigeration,network)"
         )
+        self.product_compatible_kiosks_list = QListWidget()
+        self.product_compatible_kiosks_list.setSelectionMode(QListWidget.MultiSelection)
+        for kiosk_label in ["Pharmacy", "Food", "Emergency Relief"]:
+            item = QListWidgetItem(kiosk_label)
+            self.product_compatible_kiosks_list.addItem(item)
+            item.setSelected(True)
         self.product_essential_checkbox = QCheckBox("Essential item")
         self.add_product_btn = QPushButton("Add product")
+        self.set_hw_fault_btn = QPushButton("Set Hardware Fault (Selected)")
+        self.restore_hw_btn = QPushButton("Restore Hardware Active (Selected)")
         product_form.addRow("ID", self.product_id_input)
         product_form.addRow("Name", self.product_name_input)
         product_form.addRow("Price", self.product_price_input)
         product_form.addRow("Total Stock", self.product_stock_input)
         product_form.addRow("", self.product_hw_checkbox)
         product_form.addRow("Required Modules", self.product_required_modules_input)
+        product_form.addRow(QLabel("Compatible Kiosks (multi-select)"))
+        product_form.addRow(self.product_compatible_kiosks_list)
         product_form.addRow("", self.product_essential_checkbox)
         product_form.addRow("", self.add_product_btn)
+        product_form.addRow("", self.set_hw_fault_btn)
+        product_form.addRow("", self.restore_hw_btn)
 
         bundle_box = QGroupBox("Add Bundle")
         bundle_form = QFormLayout(bundle_box)
@@ -123,10 +137,13 @@ class InventoryTab(QWidget):
         self.refresh_children_btn.clicked.connect(self.refresh_bundle_children_list)
         self.add_product_btn.clicked.connect(self._add_product)
         self.add_bundle_btn.clicked.connect(self._add_bundle)
+        self.set_hw_fault_btn.clicked.connect(self._set_hw_fault)
+        self.restore_hw_btn.clicked.connect(self._restore_hw)
         self._controller.inventory_changed.connect(self.refresh_inventory_tree)
         self._controller.inventory_changed.connect(self.refresh_bundle_children_list)
         self._controller.kiosk_changed.connect(self.refresh_inventory_tree)
         self._controller.kiosk_changed.connect(self.refresh_bundle_children_list)
+        self._controller.kiosk_changed.connect(self._refresh_permissions)
 
     def refresh_inventory_tree(self) -> None:
         self.inventory_tree.clear()
@@ -196,10 +213,18 @@ class InventoryTab(QWidget):
             for token in self.product_required_modules_input.text().split(",")
             if token.strip()
         ]
+        compatible_kiosks = [
+            normalize_kiosk_tag(str(item.text()))
+            for item in self.product_compatible_kiosks_list.selectedItems()
+            if normalize_kiosk_tag(str(item.text()))
+        ]
         essential_item = self.product_essential_checkbox.isChecked()
 
         if not item_id or not name:
             QMessageBox.warning(self, "Invalid Input", "Product ID and name are required.")
+            return
+        if self._controller.kiosk.inventory.get_item(item_id) is not None:
+            QMessageBox.warning(self, "Duplicate Product", f"Product ID already exists: {item_id}")
             return
 
         product = Product(
@@ -210,6 +235,7 @@ class InventoryTab(QWidget):
             hardware_available=hardware_available,
             required_modules=required_modules,
             essential_item=essential_item,
+            compatible_kiosks=compatible_kiosks,
         )
         if self._controller.add_product(product):
             self.product_id_input.clear()
@@ -218,6 +244,8 @@ class InventoryTab(QWidget):
             self.product_stock_input.setValue(0)
             self.product_hw_checkbox.setChecked(True)
             self.product_required_modules_input.clear()
+            for i in range(self.product_compatible_kiosks_list.count()):
+                self.product_compatible_kiosks_list.item(i).setSelected(True)
             self.product_essential_checkbox.setChecked(False)
         else:
             QMessageBox.warning(self, "Add Product Failed", f"Product ID already exists: {item_id}")
@@ -244,4 +272,62 @@ class InventoryTab(QWidget):
                 self.bundle_children_list.item(i).setSelected(False)
         else:
             QMessageBox.warning(self, "Add Bundle Failed", f"Could not add bundle {bundle_id}.")
+
+    def _set_hw_fault(self) -> None:
+        self._set_hw_state(False)
+
+    def _restore_hw(self) -> None:
+        self._set_hw_state(True)
+
+    def _set_hw_state(self, available: bool) -> None:
+        selected = self.inventory_tree.currentItem()
+        if selected is None:
+            QMessageBox.warning(self, "No Selection", "Please select a product in the tree.")
+            return
+
+        item_id = selected.text(0)
+        snapshot = self._controller.get_inventory_snapshot()
+        item = self._find_item_by_id(snapshot, item_id)
+        if item is None:
+            QMessageBox.warning(self, "Not Found", f"Item not found: {item_id}")
+            return
+
+        if item.get("is_bundle", False):
+            QMessageBox.warning(self, "Invalid Selection", "Cannot set hardware fault on a bundle.")
+            return
+
+        success = self._controller.set_product_hw_available(item_id, available)
+        if not success:
+            QMessageBox.warning(self, "Update Failed", f"Could not update hardware state for: {item_id}")
+            return
+
+        state_label = "active" if available else "fault"
+        QMessageBox.information(
+            self,
+            "Hardware State Updated",
+            f"Hardware state set to {state_label} for: {item_id}",
+        )
+        self.refresh_inventory_tree()
+
+    def _find_item_by_id(self, items: list[dict[str, Any]], item_id: str) -> dict[str, Any] | None:
+        for item in items:
+            if item["id"] == item_id:
+                return item
+            if item.get("children"):
+                found = self._find_item_by_id(item["children"], item_id)
+                if found:
+                    return found
+        return None
+
+    def _refresh_permissions(self) -> None:
+        role = self._controller.get_operator_role()
+        can_edit_inventory = role == "admin"
+        can_manage_hardware = role in {"admin", "technician"}
+
+        self.load_btn.setEnabled(can_edit_inventory)
+        self.save_btn.setEnabled(can_edit_inventory)
+        self.add_product_btn.setEnabled(can_edit_inventory)
+        self.add_bundle_btn.setEnabled(can_edit_inventory)
+        self.set_hw_fault_btn.setEnabled(can_manage_hardware)
+        self.restore_hw_btn.setEnabled(can_manage_hardware)
 

@@ -122,6 +122,22 @@ class TestInventory(unittest.TestCase):
         self.assertEqual(cold_chain.required_modules, ("network", "refrigeration"))
         self.assertTrue(cold_chain.is_essential_item)
 
+    def test_product_kiosk_compatibility_accepts_factory_style_names(self):
+        antiseptic = Product(
+            "MED-003",
+            "Antiseptic",
+            30.0,
+            total_stock=10,
+            compatible_kiosks=["pharmacy", "emergency"],
+        )
+        self.assertTrue(antiseptic.is_compatible_with_kiosk("PharmacyKiosk"))
+        self.assertTrue(antiseptic.is_compatible_with_kiosk("EmergencyReliefKiosk"))
+        self.assertFalse(antiseptic.is_compatible_with_kiosk("FoodKiosk"))
+
+    def test_add_item_rejects_duplicate_ids(self):
+        duplicate = Product("P001", "Duplicate Product", 99.0, total_stock=1)
+        self.assertFalse(self.manager.add_item(duplicate))
+
 
 if __name__ == '__main__':
     unittest.main()

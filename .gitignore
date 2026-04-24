@@ -1,3 +1,5 @@
 **/__pycache__/
 IT620_Project.pdf
 PATH*
+.pytest_cache/
+.claude/

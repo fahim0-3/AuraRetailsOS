@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 
 from PySide6.QtWidgets import QApplication
 
+from core.central_registry import CentralRegistry
 from factories.emergency_relief_factory import EmergencyReliefKioskFactory
 from factories.food_kiosk_factory import FoodKioskFactory
 from factories.pharmacy_kiosk_factory import PharmacyKioskFactory
@@ -97,7 +99,13 @@ def main() -> int:
     app.setStyle("Fusion")
     app.setStyleSheet(_get_stylesheet())
 
+    registry = CentralRegistry.get_instance()
+    registry.load_config(str(Path(__file__).resolve().parents[1] / "data" / "config.json"))
+
     window = MainWindow(factory, kiosk_id)
+    active_role = registry.get_status("activeRole")
+    if isinstance(active_role, str) and active_role.strip():
+        window.controller.set_operator_role(active_role, validate_password=False)
     window.show()
     return app.exec()
 

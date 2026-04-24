@@ -1,8 +1,30 @@
 {
   "kioskId": "KIOSK-001",
-  "kioskType": "PharmacyKiosk",
+  "kioskType": "EmergencyReliefKiosk",
+  "activeRole": "admin",
   "emergencyMode": false,
   "maxPurchasePerUser": 5,
   "pricingMode": "standard",
-  "activePaymentProvider": "CreditCard"
+  "activePaymentProvider": "CreditCard",
+  "rolePasswords": {
+    "admin": "admin123",
+    "technician": "tech123"
+  },
+  "kioskRegistry": [
+    {
+      "kioskId": "KIOSK-001",
+      "kioskType": "EmergencyReliefKiosk",
+      "role": "admin"
+    },
+    {
+      "kioskId": "KIOSK-002",
+      "kioskType": "FoodKiosk",
+      "role": "technician"
+    },
+    {
+      "kioskId": "KIOSK-003",
+      "kioskType": "FoodKiosk",
+      "role": "technician"
+    }
+  ]
 }

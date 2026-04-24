@@ -14,9 +14,12 @@ if TYPE_CHECKING:
 
 
 class InventoryProxy(IInventoryManager):
+    ROLE_OPTIONS = ("admin", "technician", "user")
+
     def __init__(self, role: str) -> None:
         self._real = InventoryManager()
-        self._role = role  # "admin", "user", "technician"
+        normalized = role.strip().lower()
+        self._role = normalized if normalized in self.ROLE_OPTIONS else "user"
 
     def get_item(self, item_id: str) -> Optional[IInventoryItem]:
         CentralRegistry.get_instance().log_event(
@@ -71,3 +74,15 @@ class InventoryProxy(IInventoryManager):
     @property
     def real(self) -> InventoryManager:
         return self._real
+
+    @property
+    def role(self) -> str:
+        return self._role
+
+    def set_role(self, role: str) -> bool:
+        normalized = role.strip().lower()
+        if normalized not in self.ROLE_OPTIONS:
+            return False
+        self._role = normalized
+        CentralRegistry.get_instance().log_event(f"[InventoryProxy] role set to {normalized}")
+        return True

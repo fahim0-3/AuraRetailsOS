@@ -3,14 +3,18 @@
     "id": "MED-001",
     "name": "Paracetamol 500mg",
     "price": 25.0,
-    "stock": 100,
+    "stock": 89,
     "reserved": 0,
     "hardwareAvailable": true,
     "requiredModules": [
       "refrigeration"
     ],
     "essentialItem": true,
-    "isBundle": false
+    "isBundle": false,
+    "compatibleKiosks": [
+      "emergency",
+      "pharmacy"
+    ]
   },
   {
     "id": "MED-002",
@@ -21,12 +25,180 @@
     "hardwareAvailable": true,
     "requiredModules": [],
     "essentialItem": true,
-    "isBundle": false
+    "isBundle": false,
+    "compatibleKiosks": [
+      "emergency",
+      "pharmacy"
+    ]
+  },
+  {
+    "id": "MED-003",
+    "name": "Antiseptic",
+    "price": 30.0,
+    "stock": 30,
+    "reserved": 0,
+    "hardwareAvailable": true,
+    "requiredModules": [],
+    "essentialItem": true,
+    "isBundle": false,
+    "compatibleKiosks": [
+      "emergency",
+      "pharmacy"
+    ]
+  },
+  {
+    "id": "FOOD-001",
+    "name": "Sandwich",
+    "price": 80.0,
+    "stock": 25,
+    "reserved": 0,
+    "hardwareAvailable": true,
+    "requiredModules": [],
+    "essentialItem": false,
+    "isBundle": false,
+    "compatibleKiosks": [
+      "food"
+    ]
+  },
+  {
+    "id": "FOOD-002",
+    "name": "Salad",
+    "price": 65.0,
+    "stock": 40,
+    "reserved": 0,
+    "hardwareAvailable": true,
+    "requiredModules": [
+      "refrigeration"
+    ],
+    "essentialItem": false,
+    "isBundle": false,
+    "compatibleKiosks": [
+      "food"
+    ]
+  },
+  {
+    "id": "FOOD-003",
+    "name": "Burger",
+    "price": 95.0,
+    "stock": 35,
+    "reserved": 0,
+    "hardwareAvailable": true,
+    "requiredModules": [],
+    "essentialItem": false,
+    "isBundle": false,
+    "compatibleKiosks": [
+      "food"
+    ]
+  },
+  {
+    "id": "EMERG-001",
+    "name": "Emergency Water",
+    "price": 12.0,
+    "stock": 100,
+    "reserved": 0,
+    "hardwareAvailable": true,
+    "requiredModules": [],
+    "essentialItem": true,
+    "isBundle": false,
+    "compatibleKiosks": [
+      "emergency"
+    ]
+  },
+  {
+    "id": "EMERG-002",
+    "name": "First Aid Kit",
+    "price": 45.0,
+    "stock": 60,
+    "reserved": 0,
+    "hardwareAvailable": true,
+    "requiredModules": [],
+    "essentialItem": true,
+    "isBundle": false,
+    "compatibleKiosks": [
+      "emergency"
+    ]
   },
   {
     "id": "BUNDLE-001",
-    "name": "Emergency Kit",
+    "name": "Medical Kit",
     "isBundle": true,
-    "children": ["MED-001", "MED-002"]
+    "children": [
+      "MED-001",
+      "MED-002"
+    ],
+    "compatibleKiosks": [
+      "emergency",
+      "pharmacy"
+    ]
+  },
+  {
+    "id": "BUNDLE-002",
+    "name": "Lunch Combo",
+    "isBundle": true,
+    "children": [
+      "FOOD-001",
+      "FOOD-002"
+    ],
+    "compatibleKiosks": [
+      "food"
+    ]
+  },
+  {
+    "id": "BUNDLE-003",
+    "name": "Emergency Response Kit",
+    "isBundle": true,
+    "children": [
+      "EMERG-001",
+      "EMERG-002"
+    ],
+    "compatibleKiosks": [
+      "emergency"
+    ]
+  },
+  {
+    "id": "BUNDLE-004",
+    "name": "Burger with antiseptic",
+    "isBundle": true,
+    "children": [
+      "MED-003",
+      "FOOD-003"
+    ],
+    "compatibleKiosks": [
+      "emergency",
+      "food",
+      "pharmacy"
+    ]
+  },
+  {
+    "id": "FOOD-004",
+    "name": "IUDJFK",
+    "price": 100.0,
+    "stock": 499,
+    "reserved": 0,
+    "hardwareAvailable": true,
+    "requiredModules": [
+      "solar_monitor"
+    ],
+    "essentialItem": false,
+    "isBundle": false,
+    "compatibleKiosks": [
+      "food"
+    ]
+  },
+  {
+    "id": "gps-001",
+    "name": "gps",
+    "price": 50.0,
+    "stock": 5000,
+    "reserved": 0,
+    "hardwareAvailable": false,
+    "requiredModules": [
+      "network"
+    ],
+    "essentialItem": false,
+    "isBundle": false,
+    "compatibleKiosks": [
+      "emergency"
+    ]
   }
 ]

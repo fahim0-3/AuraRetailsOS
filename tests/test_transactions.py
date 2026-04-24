@@ -3,6 +3,8 @@
 # ============================================================
 
 import unittest
+import os
+import tempfile
 from unittest.mock import Mock
 from transaction.purchase_item_command import PurchaseItemCommand
 from transaction.refund_command import RefundCommand
@@ -14,18 +16,25 @@ from inventory.inventory_manager import InventoryManager
 from inventory.inventory_proxy import InventoryProxy
 from payment.credit_card_adapter import CreditCardAdapter
 from hardware.dispenser_controller import DispenserController
+from hardware.solar_monitor_module import SolarMonitorModule
 from hardware.network_module import NetworkModule
 from hardware.spiral_dispenser import SpiralDispenserImpl
 from pricing.pricing_policies import DiscountPricingPolicy
 from verification.kiosk_verification_module import KioskVerificationModule
 from core.kiosk_interface import KioskInterface
+from factories.emergency_relief_factory import EmergencyReliefKioskFactory
 from factories.food_kiosk_factory import FoodKioskFactory
+from factories.pharmacy_kiosk_factory import PharmacyKioskFactory
 
 
 class TestTransactions(unittest.TestCase):
     def setUp(self):
         # Clear CentralRegistry singleton for clean tests
         CentralRegistry._instance = None
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".json")
+        temp_file.write(b"[]")
+        temp_file.close()
+        self.transactions_file = temp_file.name
 
         self.inventory = InventoryManager()
         self.payment = CreditCardAdapter()
@@ -35,6 +44,10 @@ class TestTransactions(unittest.TestCase):
         # Create test product
         self.product = Product("TEST001", "Test Product", 25.0, total_stock=10, reserved_stock=0)
         self.inventory.add_item(self.product)
+
+    def tearDown(self):
+        if os.path.exists(self.transactions_file):
+            os.remove(self.transactions_file)
 
     def test_purchase_success(self):
         cmd = PurchaseItemCommand(
@@ -265,9 +278,26 @@ class TestTransactions(unittest.TestCase):
         self.assertTrue(result_success)
         self.assertEqual(cmd_success.status, "SUCCESS")
 
+    def test_purchase_accepts_solar_alias_required_module(self):
+        solar_item = Product(
+            "SOL001",
+            "Solar Pack",
+            25.0,
+            total_stock=5,
+            required_modules=["solar"],
+        )
+        kiosk = KioskInterface(PharmacyKioskFactory(), "KIOSK-TEST", transactions_filepath=self.transactions_file)
+        kiosk.attach_module(SolarMonitorModule(kiosk._module_chain))
+        kiosk.add_product(solar_item)
+
+        result = kiosk.purchase_item("SOL001", "USER001", 1)
+
+        self.assertTrue(result)
+        self.assertEqual(solar_item.get_available_stock(), 4)
+
     def test_purchase_blocks_when_kiosk_in_maintenance_mode(self):
         CentralRegistry.get_instance().set_status("kioskMode", "maintenance")
-        kiosk = KioskInterface(FoodKioskFactory(), "KIOSK-TEST")
+        kiosk = KioskInterface(FoodKioskFactory(), "KIOSK-TEST", transactions_filepath=self.transactions_file)
         kiosk.add_product(Product("FOOD001", "Snack", 10.0, total_stock=3))
 
         result = kiosk.purchase_item("FOOD001", "USER001", 1)
@@ -280,7 +310,7 @@ class TestTransactions(unittest.TestCase):
 
     def test_purchase_blocks_when_network_module_is_offline(self):
         CentralRegistry.get_instance().set_status("networkOnline", False)
-        kiosk = KioskInterface(FoodKioskFactory(), "KIOSK-TEST")
+        kiosk = KioskInterface(FoodKioskFactory(), "KIOSK-TEST", transactions_filepath=self.transactions_file)
         kiosk.attach_module(NetworkModule(kiosk._module_chain))
         kiosk.add_product(Product("FOOD002", "Wrap", 15.0, total_stock=4))
 
@@ -291,6 +321,59 @@ class TestTransactions(unittest.TestCase):
         self.assertTrue(
             any("network is offline" in event for event in CentralRegistry.get_instance().get_event_log())
         )
+
+    def test_purchase_allows_compatible_kiosk_alias_match(self):
+        kiosk = KioskInterface(PharmacyKioskFactory(), "KIOSK-TEST", transactions_filepath=self.transactions_file)
+        kiosk.add_product(
+            Product(
+                "MED003",
+                "Antiseptic",
+                30.0,
+                total_stock=3,
+                compatible_kiosks=["pharmacy", "emergency"],
+            )
+        )
+
+        result = kiosk.purchase_item("MED003", "USER001", 1)
+
+        self.assertTrue(result)
+        self.assertEqual(kiosk.inventory.get_item("MED003").get_available_stock(), 2)
+
+    def test_refund_rejects_unknown_transaction_id(self):
+        kiosk = KioskInterface(FoodKioskFactory(), "KIOSK-TEST", transactions_filepath=self.transactions_file)
+
+        result = kiosk.refund_transaction("UNKNOWN-TXN", 5.0)
+
+        self.assertFalse(result)
+        history = kiosk.get_transaction_history()
+        self.assertEqual(history[-1]["type"], "REFUND")
+        self.assertEqual(history[-1]["status"], "FAILED")
+        self.assertEqual(history[-1]["transaction_id"], "UNKNOWN-TXN")
+
+    def test_transaction_history_persists_across_kiosk_switch(self):
+        kiosk_1 = KioskInterface(PharmacyKioskFactory(), "KIOSK-001", transactions_filepath=self.transactions_file)
+        kiosk_1.add_product(Product("MEDX", "MedX", 10.0, total_stock=3))
+        purchase_ok = kiosk_1.purchase_item("MEDX", "USER001", 1)
+        self.assertTrue(purchase_ok)
+        purchase_txn_id = kiosk_1.get_transaction_history()[-1]["transaction_id"]
+
+        kiosk_2 = KioskInterface(FoodKioskFactory(), "KIOSK-002", transactions_filepath=self.transactions_file)
+        persisted_history = kiosk_2.get_transaction_history()
+
+        self.assertTrue(any(entry["transaction_id"] == purchase_txn_id for entry in persisted_history))
+
+    def test_refund_cannot_exceed_remaining_purchase_amount(self):
+        kiosk = KioskInterface(PharmacyKioskFactory(), "KIOSK-TEST", transactions_filepath=self.transactions_file)
+        kiosk.add_product(Product("MEDY", "MedY", 20.0, total_stock=4))
+        purchase_ok = kiosk.purchase_item("MEDY", "USER001", 1)
+        self.assertTrue(purchase_ok)
+        transaction_id = kiosk.get_transaction_history()[-1]["transaction_id"]
+
+        first_refund_ok = kiosk.refund_transaction(transaction_id, 12.0)
+        self.assertTrue(first_refund_ok)
+
+        second_refund_ok = kiosk.refund_transaction(transaction_id, 9.0)
+        self.assertFalse(second_refund_ok)
 
 
 if __name__ == '__main__':

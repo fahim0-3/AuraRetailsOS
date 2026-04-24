@@ -729,13 +729,14 @@ python -m unittest tests.test_transactions -v
 
 The GUI wraps existing domain logic through `KioskInterface` via `gui/kiosk_controller.py`.
 No design-pattern implementation is rewritten; the tabs orchestrate the same flows as
-the console scenarios:
+the console scenarios. A role selector lets you switch between `admin`, `technician`,
+and `user` views so you can demonstrate different faculty testing paths:
 
 | Tab | What it does | Patterns highlighted |
 |---|---|---|
-| Kiosk / Hardware | Create kiosk variants, run diagnostics, attach modules, hot-swap dispenser hardware | Abstract Factory, Bridge, Decorator, Facade |
+| Kiosk / Hardware | Create kiosk variants, run diagnostics, attach modules, hot-swap dispenser hardware, switch operator role | Abstract Factory, Bridge, Decorator, Facade |
 | Inventory | Visualize product/bundle tree, load/save `data/inventory.json`, add products and bundles | Composite, Proxy, Facade |
-| Transactions / Payments | Purchase and refund forms, runtime payment adapter swap (UPI/Credit Card/Digital Wallet) | Adapter, Command, Facade |
+| Transactions / Payments | Purchase and refund forms, runtime payment adapter swap (UPI/Credit Card/Digital Wallet), kiosk switching | Adapter, Command, Facade |
 | History / Logs | Structured command history and singleton event log stream | Command, Singleton |
 
 Run with:
@@ -764,9 +765,15 @@ registry.save_config("data/config.json")   # Save status map to file
 {
   "kioskId": "KIOSK-001",
   "kioskType": "PharmacyKiosk",
+  "activeRole": "admin",
   "emergencyMode": false,
   "maxPurchasePerUser": 5,
-  "activePaymentProvider": "CreditCard"
+  "activePaymentProvider": "CreditCard",
+  "kioskRegistry": [
+    { "kioskId": "KIOSK-001", "kioskType": "PharmacyKiosk", "role": "admin" },
+    { "kioskId": "KIOSK-002", "kioskType": "FoodKiosk", "role": "user" },
+    { "kioskId": "KIOSK-003", "kioskType": "EmergencyReliefKiosk", "role": "technician" }
+  ]
 }
 ```
 

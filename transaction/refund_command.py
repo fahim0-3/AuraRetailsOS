@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 from datetime import datetime, timezone
-import uuid
 from typing import TYPE_CHECKING
 
 from transaction.i_command import ICommand
@@ -40,6 +39,13 @@ class RefundCommand(ICommand):
         return f"REFUND {self._transaction_id} @ ${self._amount:.2f} [{self._status}]"
 
     def execute(self) -> bool:
+        if self._amount <= 0:
+            self._status = "FAILED"
+            CentralRegistry.get_instance().log_event(
+                f"REFUND FAILED: {self._transaction_id} (amount must be positive)"
+            )
+            return False
+
         if self._payment.refund_payment(self._transaction_id, self._amount):
             self._status = "SUCCESS"
             CentralRegistry.get_instance().log_event(

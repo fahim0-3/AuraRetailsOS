@@ -1,1 +1,314 @@
-[]
+[
+  {
+    "id": "7E76E533",
+    "type": "PURCHASE",
+    "productId": "KIT-002",
+    "userId": "USER-001",
+    "amount": 74.75,
+    "timestamp": "2026-04-24T17:10:16+00:00",
+    "status": "SUCCESS"
+  },
+  {
+    "id": "KIT-002",
+    "type": "PURCHASE",
+    "productId": "KIT-002",
+    "userId": "USER-001",
+    "amount": 0.0,
+    "timestamp": "2026-04-24T17:10:16+00:00",
+    "status": "FAILED"
+  },
+  {
+    "id": "13B2F017",
+    "type": "PURCHASE",
+    "productId": "KIT-002",
+    "userId": "USER-001",
+    "amount": 74.75,
+    "timestamp": "2026-04-24T17:10:16+00:00",
+    "status": "SUCCESS"
+  },
+  {
+    "id": "87EE34F7",
+    "type": "PURCHASE",
+    "productId": "MED-003",
+    "userId": "USER-001",
+    "amount": 30.0,
+    "timestamp": "2026-04-24T17:11:35+00:00",
+    "status": "SUCCESS"
+  },
+  {
+    "id": "NOT-A-TXN",
+    "type": "REFUND",
+    "productId": "",
+    "userId": "",
+    "amount": 5.0,
+    "timestamp": "2026-04-24T17:11:35+00:00",
+    "status": "FAILED",
+    "relatedTransactionId": "NOT-A-TXN"
+  },
+  {
+    "id": "33289F04",
+    "type": "PURCHASE",
+    "productId": "FOOD-001",
+    "userId": "USER-001",
+    "amount": 72.0,
+    "timestamp": "2026-04-24T17:40:44+00:00",
+    "status": "SUCCESS"
+  },
+  {
+    "id": "AB84F6D0",
+    "type": "PURCHASE",
+    "productId": "FOOD-001",
+    "userId": "USER-002",
+    "amount": 72.0,
+    "timestamp": "2026-04-24T17:40:44+00:00",
+    "status": "SUCCESS"
+  },
+  {
+    "id": "TX-REFUND-001",
+    "type": "REFUND",
+    "productId": "",
+    "userId": "",
+    "amount": 72.0,
+    "timestamp": "2026-04-24T17:40:44+00:00",
+    "status": "FAILED",
+    "relatedTransactionId": "TX-REFUND-001"
+  },
+  {
+    "id": "FEB9135E",
+    "type": "PURCHASE",
+    "productId": "KIT-002",
+    "userId": "USER-001",
+    "amount": 74.75,
+    "timestamp": "2026-04-24T17:40:44+00:00",
+    "status": "SUCCESS"
+  },
+  {
+    "id": "KIT-002",
+    "type": "PURCHASE",
+    "productId": "KIT-002",
+    "userId": "USER-001",
+    "amount": 0.0,
+    "timestamp": "2026-04-24T17:40:44+00:00",
+    "status": "FAILED"
+  },
+  {
+    "id": "717628B3",
+    "type": "PURCHASE",
+    "productId": "KIT-002",
+    "userId": "USER-001",
+    "amount": 74.75,
+    "timestamp": "2026-04-24T17:40:44+00:00",
+    "status": "SUCCESS"
+  },
+  {
+    "id": "6C9A0D63",
+    "type": "PURCHASE",
+    "productId": "MED-003",
+    "userId": "USER-001",
+    "amount": 30.0,
+    "timestamp": "2026-04-24T17:42:24+00:00",
+    "status": "SUCCESS"
+  },
+  {
+    "id": "005DEC7D",
+    "type": "PURCHASE",
+    "productId": "MED-003",
+    "userId": "USER-001",
+    "amount": 30.0,
+    "timestamp": "2026-04-24T17:45:11+00:00",
+    "status": "SUCCESS"
+  },
+  {
+    "id": "MED-003",
+    "type": "PURCHASE",
+    "productId": "MED-003",
+    "userId": "USER-001",
+    "amount": 0.0,
+    "timestamp": "2026-04-24T17:45:56+00:00",
+    "status": "FAILED"
+  },
+  {
+    "id": "005DEC7D",
+    "type": "REFUND",
+    "productId": "",
+    "userId": "",
+    "amount": 30.1,
+    "timestamp": "2026-04-24T17:46:58+00:00",
+    "status": "FAILED",
+    "relatedTransactionId": "005DEC7D"
+  },
+  {
+    "id": "005DEC7D",
+    "type": "REFUND",
+    "productId": "",
+    "userId": "",
+    "amount": 29.0,
+    "timestamp": "2026-04-24T17:47:13+00:00",
+    "status": "SUCCESS",
+    "relatedTransactionId": "005DEC7D"
+  },
+  {
+    "id": "005DEC7D",
+    "type": "REFUND",
+    "productId": "",
+    "userId": "",
+    "amount": 29.0,
+    "timestamp": "2026-04-24T17:47:19+00:00",
+    "status": "FAILED",
+    "relatedTransactionId": "005DEC7D"
+  },
+  {
+    "id": "005DEC7E",
+    "type": "REFUND",
+    "productId": "",
+    "userId": "",
+    "amount": 30.0,
+    "timestamp": "2026-04-24T17:47:49+00:00",
+    "status": "FAILED",
+    "relatedTransactionId": "005DEC7E"
+  },
+  {
+    "id": "E332435D",
+    "type": "PURCHASE",
+    "productId": "EMERG-002",
+    "userId": "USER-001",
+    "amount": 45.0,
+    "timestamp": "2026-04-24T17:49:24+00:00",
+    "status": "SUCCESS"
+  },
+  {
+    "id": "EMERG-002",
+    "type": "PURCHASE",
+    "productId": "EMERG-002",
+    "userId": "USER-001",
+    "amount": 0.0,
+    "timestamp": "2026-04-24T17:49:52+00:00",
+    "status": "FAILED"
+  },
+  {
+    "id": "food-003",
+    "type": "PURCHASE",
+    "productId": "food-003",
+    "userId": "USER-001",
+    "amount": 0.0,
+    "timestamp": "2026-04-24T17:59:14+00:00",
+    "status": "FAILED"
+  },
+  {
+    "id": "FOOD-002",
+    "type": "PURCHASE",
+    "productId": "FOOD-002",
+    "userId": "USER-001",
+    "amount": 0.0,
+    "timestamp": "2026-04-24T18:00:31+00:00",
+    "status": "FAILED"
+  },
+  {
+    "id": "A19BA37D",
+    "type": "PURCHASE",
+    "productId": "FOOD-002",
+    "userId": "USER-001",
+    "amount": 65.0,
+    "timestamp": "2026-04-24T18:00:45+00:00",
+    "status": "SUCCESS"
+  },
+  {
+    "id": "food-003",
+    "type": "PURCHASE",
+    "productId": "food-003",
+    "userId": "USER-001",
+    "amount": 0.0,
+    "timestamp": "2026-04-24T18:02:21+00:00",
+    "status": "FAILED"
+  },
+  {
+    "id": "food-003",
+    "type": "PURCHASE",
+    "productId": "food-003",
+    "userId": "USER-001",
+    "amount": 0.0,
+    "timestamp": "2026-04-24T18:02:35+00:00",
+    "status": "FAILED"
+  },
+  {
+    "id": "FOOD-004",
+    "type": "PURCHASE",
+    "productId": "FOOD-004",
+    "userId": "USER-001",
+    "amount": 0.0,
+    "timestamp": "2026-04-24T18:11:40+00:00",
+    "status": "FAILED"
+  },
+  {
+    "id": "E2117E11",
+    "type": "PURCHASE",
+    "productId": "FOOD-004",
+    "userId": "USER-001",
+    "amount": 100.0,
+    "timestamp": "2026-04-24T18:11:54+00:00",
+    "status": "SUCCESS"
+  },
+  {
+    "id": "gps-001",
+    "type": "PURCHASE",
+    "productId": "gps-001",
+    "userId": "USER-001",
+    "amount": 0.0,
+    "timestamp": "2026-04-24T18:13:57+00:00",
+    "status": "FAILED"
+  },
+  {
+    "id": "gps-001",
+    "type": "PURCHASE",
+    "productId": "gps-001",
+    "userId": "USER-001",
+    "amount": 0.0,
+    "timestamp": "2026-04-24T18:14:35+00:00",
+    "status": "FAILED"
+  },
+  {
+    "id": "gps-001",
+    "type": "PURCHASE",
+    "productId": "gps-001",
+    "userId": "USER-001",
+    "amount": 0.0,
+    "timestamp": "2026-04-24T18:20:07+00:00",
+    "status": "FAILED"
+  },
+  {
+    "id": "0ADCA1A8",
+    "type": "PURCHASE",
+    "productId": "gps-001",
+    "userId": "USER-001",
+    "amount": 50.0,
+    "timestamp": "2026-04-24T18:20:20+00:00",
+    "status": "SUCCESS"
+  },
+  {
+    "id": "gps-001",
+    "type": "PURCHASE",
+    "productId": "gps-001",
+    "userId": "USER-001",
+    "amount": 0.0,
+    "timestamp": "2026-04-24T18:22:58+00:00",
+    "status": "FAILED"
+  },
+  {
+    "id": "gps-001",
+    "type": "PURCHASE",
+    "productId": "gps-001",
+    "userId": "USER-001",
+    "amount": 0.0,
+    "timestamp": "2026-04-24T18:23:55+00:00",
+    "status": "FAILED"
+  },
+  {
+    "id": "3EEB13B5",
+    "type": "PURCHASE",
+    "productId": "gps-001",
+    "userId": "USER-001",
+    "amount": 50.0,
+    "timestamp": "2026-04-24T18:24:17+00:00",
+    "status": "SUCCESS"
+  }
+]
