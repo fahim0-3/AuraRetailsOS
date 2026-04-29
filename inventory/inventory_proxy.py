@@ -22,9 +22,6 @@ class InventoryProxy(IInventoryManager):
         self._role = normalized if normalized in self.ROLE_OPTIONS else "user"
 
     def get_item(self, item_id: str) -> Optional[IInventoryItem]:
-        CentralRegistry.get_instance().log_event(
-            f"[InventoryProxy] get_item({item_id}) by {self._role}"
-        )
         return self._real.get_item(item_id)
 
     def update_stock(self, item_id: str, delta: int) -> bool:

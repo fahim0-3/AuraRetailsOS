@@ -90,7 +90,6 @@ class KioskInterface:
                 "kiosk_mode": self._get_kiosk_mode(),
                 "kiosk_type": self._kiosk_type,
                 "kiosk_operational": self._module_chain.is_operational(),
-                "requires_network": "network" in active_modules,
                 "network_online": self._is_network_online(),
             },
         )
@@ -385,7 +384,7 @@ class KioskInterface:
                 "type": "PURCHASE",
                 "product_id": getattr(cmd, "_product_id", ""),
                 "user_id": getattr(cmd, "_user_id", ""),
-                "transaction_id": getattr(cmd, "_transaction_id", "") or getattr(cmd, "_product_id", ""),
+                "transaction_id": getattr(cmd, "_transaction_id", ""),
                 "related_transaction_id": "",
                 "amount": float(getattr(cmd, "_amount", 0.0)),
                 "status": cmd.status,

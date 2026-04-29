@@ -45,7 +45,7 @@ class PurchaseItemCommand(ICommand):
         self._pricing_context = pricing_context or {}
         self._verification_context = verification_context or {}
         self._amount = 0.0
-        self._transaction_id = ""
+        self._transaction_id = str(uuid.uuid4())[:8].upper()
         self._status = "PENDING"
         self._timestamp = datetime.now(timezone.utc).isoformat(timespec='seconds')
 
@@ -113,7 +113,6 @@ class PurchaseItemCommand(ICommand):
             )
             return False
 
-        self._transaction_id = str(uuid.uuid4())[:8].upper()
         self._inventory.finalize_purchase(self._product_id, self._quantity)
         self._status = "SUCCESS"
         CentralRegistry.get_instance().log_event(

@@ -111,13 +111,13 @@ class HardwareTab(QWidget):
         self.run_diagnostics_btn.clicked.connect(self._run_diagnostics)
 
         self.attach_refrigeration_btn.clicked.connect(
-            lambda: self._controller.attach_module(RefrigerationModule(BaseKiosk()))
+            lambda: self._controller.attach_module(RefrigerationModule(self._controller.kiosk._module_chain))
         )
         self.attach_solar_btn.clicked.connect(
-            lambda: self._controller.attach_module(SolarMonitorModule(BaseKiosk()))
+            lambda: self._controller.attach_module(SolarMonitorModule(self._controller.kiosk._module_chain))
         )
         self.attach_network_btn.clicked.connect(
-            lambda: self._controller.attach_module(NetworkModule(BaseKiosk()))
+            lambda: self._controller.attach_module(NetworkModule(self._controller.kiosk._module_chain))
         )
 
         self.use_spiral_btn.clicked.connect(

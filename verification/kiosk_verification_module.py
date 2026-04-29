@@ -45,8 +45,13 @@ class KioskVerificationModule(IVerificationModule):
         if kiosk_mode in {"maintenance", "offline", "disabled"}:
             return False, f"kiosk is not accepting purchases while in {kiosk_mode} mode"
 
-        requires_network = _to_bool(ctx.get("requires_network", False))
-        if requires_network and not _to_bool(ctx.get("network_online", True)):
+        # System-level network guard: if a NetworkModule is attached and
+        # the network is offline, block ALL purchases regardless of the
+        # individual product's required_modules list.
+        available_modules = {
+            str(m).strip().lower() for m in ctx.get("available_modules", set())
+        }
+        if "network" in available_modules and not _to_bool(ctx.get("network_online", True)):
             return False, "network is offline"
 
         if not _to_bool(ctx.get("kiosk_operational", True)):
@@ -58,11 +63,6 @@ class KioskVerificationModule(IVerificationModule):
             if not item.is_compatible_with_kiosk(kiosk_type):
                 return False, f"product '{getattr(item, 'name', item.item_id)}' is not available for this kiosk type"
 
-        available_modules = {
-            str(module_key).strip().lower()
-            for module_key in ctx.get("available_modules", set())
-            if str(module_key).strip()
-        }
         missing = sorted(self._collect_missing_modules(item, available_modules))
         if missing:
             return False, f"missing required hardware module(s): {', '.join(missing)}"
@@ -95,4 +95,12 @@ class KioskVerificationModule(IVerificationModule):
         if item.is_bundle():
             return any(self._contains_essential_item(child) for child in item._children)  # type: ignore[attr-defined]
         return bool(getattr(item, "is_essential_item", False))
+
+    def _get_all_required_modules(self, item: IInventoryItem) -> set[str]:
+        if item.is_bundle():
+            reqs = set()
+            for child in item._children:  # type: ignore[attr-defined]
+                reqs.update(self._get_all_required_modules(child))
+            return reqs
+        return {str(m).strip().lower() for m in getattr(item, "required_modules", [])}
 

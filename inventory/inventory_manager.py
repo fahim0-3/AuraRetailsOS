@@ -48,8 +48,21 @@ class InventoryManager(IInventoryManager):
                 # Check all children first
                 if not bundle.is_available() or bundle.get_available_stock() < abs(delta):
                     return False
+                
+                # Two-phase commit
+                reserved = []
+                success = True
                 for child in bundle._children:
-                    self.update_stock(child.item_id, delta)
+                    if self.update_stock(child.item_id, delta):
+                        reserved.append(child.item_id)
+                    else:
+                        success = False
+                        break
+                        
+                if not success:
+                    for cid in reserved:
+                        self.update_stock(cid, -delta) # Rollback
+                    return False
             else:
                 for child in bundle._children:
                     self.update_stock(child.item_id, delta)
@@ -58,11 +71,16 @@ class InventoryManager(IInventoryManager):
     def restock(self, item_id: str, qty: int) -> bool:
         """Increases total stock of a product"""
         item = self._items.get(item_id)
-        if not item or item.is_bundle():
+        if not item:
             return False
 
-        product = item  # type: Product
-        product.restock(qty)
+        if not item.is_bundle():
+            product = item  # type: Product
+            product.restock(qty)
+        else:
+            bundle = item  # type: ProductBundle
+            for child in bundle._children:
+                self.restock(child.item_id, qty)
         return True
 
     def deduct_total_stock(self, item_id: str, qty: int) -> bool:

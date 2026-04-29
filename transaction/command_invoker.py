@@ -58,7 +58,18 @@ class CommandInvoker:
         return [self._build_history_entry(cmd) for cmd in self._history]
 
     def persist_history(self, filepath: str) -> None:
-        entries = [
+        import os
+        existing_entries = []
+        if os.path.exists(filepath):
+            try:
+                with open(filepath, 'r') as f:
+                    data = json.load(f)
+                    if isinstance(data, list):
+                        existing_entries = data
+            except Exception:
+                pass
+
+        new_entries = [
             {
                 "id": entry["transaction_id"] or entry["product_id"],
                 "type": entry["type"],
@@ -70,6 +81,20 @@ class CommandInvoker:
             }
             for entry in self.get_history()
         ]
-        with open(filepath, 'a') as f:
-            json.dump(entries, f, indent=2)
+
+        # Merge, preferring new entries for matching IDs, and keeping old ones
+        merged = {}
+        for entry in existing_entries:
+            if "id" in entry:
+                merged[entry["id"]] = entry
+                
+        for entry in new_entries:
+            if "id" in entry:
+                merged[entry["id"]] = entry
+                
+        # Handle legacy or entries without an ID field just in case
+        final_entries = list(merged.values())
+
+        with open(filepath, 'w') as f:
+            json.dump(final_entries, f, indent=2)
             f.write("\n")
