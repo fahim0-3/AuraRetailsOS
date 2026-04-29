@@ -801,15 +801,15 @@ and status.
 
 ## Testing
 
-The project includes a comprehensive unit test suite with **23 test cases** across four
+The project includes a comprehensive unit test suite with **30 test cases** across four
 test modules:
 
-| Module | Tests | Patterns Covered |
-|---|---|---|
-| `test_hardware.py` | 4 tests | Bridge (dispenser hot-swap), Decorator (module chaining) |
-| `test_inventory.py` | 5 tests | Composite (product/bundle), Proxy (role-based authorization) |
-| `test_payment.py` | 6 tests | Adapter (all 3 adapters + all 3 legacy stubs) |
-| `test_transactions.py` | 8 tests | Command (purchase/refund/restock), undo, rollback on payment/dispense failure |
+| Module | Patterns Covered |
+|---|---|
+| `test_hardware.py` | Bridge (dispenser hot-swap), Decorator (module chaining) |
+| `test_inventory.py` | Composite (product/bundle), Proxy (role-based authorization) |
+| `test_payment.py` | Adapter (all 3 adapters + all 3 legacy stubs) |
+| `test_transactions.py` | Command (purchase/refund/restock), undo, rollback on payment/dispense failure |
 
 ### Key test scenarios:
 
